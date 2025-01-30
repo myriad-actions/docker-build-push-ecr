@@ -53,6 +53,6 @@ runs:
         docker buildx build \
           --platform linux/amd64 \
           --push \
-          -t $REGISTRY/${{ inputs.env }}/${{ inputs.app }}:${VERSION} \
+          -t $REGISTRY/${{ inputs.app }}:${VERSION} \
           -f ${{ inputs.dockerfile-path }} .
       shell: bash
