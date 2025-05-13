@@ -51,6 +51,7 @@ runs:
         VERSION: ${{ inputs.app-version }}-${{ inputs.short-sha }}
       run: |
         docker buildx build \
+          --build-arg GIT_COMMIT_SHA=${{ inputs.short-sha }} \
           --platform linux/amd64 \
           --push \
           -t $REGISTRY/${{ inputs.app }}:${VERSION} \
