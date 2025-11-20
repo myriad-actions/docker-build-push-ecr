@@ -50,19 +50,20 @@ runs:
         VERSION: ${{ inputs.app-version }}-${{ inputs.short-sha }}
       run: |
         set +e
+        echo "Checking tag: $VERSION"
         IMAGE_EXISTS=$(aws ecr describe-images \
           --repository-name ${{ inputs.app }} \
           --image-ids imageTag=$VERSION \
           --query 'imageDetails[0].imageTags[0]' \
           --output text 2>/dev/null)
-        if [[ "$IMAGE_EXISTS" == "None" || -z "$IMAGE_EXISTS" ]]; then
+        if [ -z "$IMAGE_EXISTS" ] || [ "$IMAGE_EXISTS" = "None" ] || [ "$IMAGE_EXISTS" = "null" ]; then
           echo "Image does NOT exist."
           echo "exists=false" >> $GITHUB_OUTPUT
         else
           echo "Image EXISTS: $IMAGE_EXISTS"
           echo "exists=true" >> $GITHUB_OUTPUT
         fi
-      shell: bash
+      shell: bash --noprofile --norc -o pipefail
 
     - name: Output result
       run: |
