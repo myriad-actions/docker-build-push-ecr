@@ -38,7 +38,9 @@ runs:
       run: |
         curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "/tmp/awscliv2.zip"
         unzip /tmp/awscliv2.zip -d /tmp/
-        /tmp/aws/install
+        /tmp/aws/install -i $HOME/aws-cli -b $HOME/.local/bin
+        export PATH=$HOME/.local/bin:$PATH
+        aws --version
       shell: bash
 
     - name: Configure AWS credentials
