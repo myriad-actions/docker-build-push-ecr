@@ -63,7 +63,7 @@ runs:
           echo "Image EXISTS: $IMAGE_EXISTS"
           echo "exists=true" >> $GITHUB_OUTPUT
         fi
-      shell: bash --noprofile --norc -o pipefail
+      shell: bash --noprofile --norc -o pipefail {0}
 
     - name: Output result
       run: |
