@@ -33,6 +33,13 @@ runs:
       uses: actions/checkout@v5
       with:
         fetch-depth: 0
+    
+    - name: install awscli
+      run: |
+        curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "/tmp/awscliv2.zip"
+        unzip /tmp/awscliv2.zip -d /tmp/
+        /tmp/aws/install
+      shell: bash
 
     - name: Configure AWS credentials
       uses: aws-actions/configure-aws-credentials@v5
