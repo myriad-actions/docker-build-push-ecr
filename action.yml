@@ -92,6 +92,7 @@ runs:
         docker buildx build \
           --build-arg GIT_COMMIT_SHA=${{ inputs.short-sha }} \
           --platform linux/amd64 \
+          --load \
           -t ${{ inputs.app }}:${VERSION} \
           -f ${{ inputs.dockerfile-path }} .
       shell: bash
