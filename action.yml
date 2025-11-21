@@ -87,7 +87,6 @@ runs:
     - name: Build Docker image locally
       if: steps.check-ecr-image.outputs.exists == 'false'
       env:
-        REGISTRY: ${{ steps.login-ecr.outputs.registry }}
         VERSION: ${{ inputs.app-version }}-${{ inputs.short-sha }}
       run: |
         docker buildx build \
@@ -102,7 +101,7 @@ runs:
       env:
         VERSION: ${{ inputs.app-version }}-${{ inputs.short-sha }}
       with:
-        image-ref: "${{ inputs.app }}:${VERSION}"
+        image-ref: "${{ inputs.app }}:${{ env.VERSION }}"
         format: 'table'
         exit-code: '0'
         ignore-unfixed: true
@@ -115,6 +114,6 @@ runs:
         REGISTRY: ${{ steps.login-ecr.outputs.registry }}
         VERSION: ${{ inputs.app-version }}-${{ inputs.short-sha }}
       run: |
-        docker tag ${{ inputs.app }}:${VERSION} $REGISTRY/${{ inputs.app }}:${VERSION}
-        docker push $REGISTRY/${{ inputs.app }}:${VERSION}
+        docker tag ${{ inputs.app }}:${{ env.VERSION }} $REGISTRY/${{ inputs.app }}:${{ env.VERSION }}
+        docker push $REGISTRY/${{ inputs.app }}:${{ env.VERSION }}
       shell: bash
