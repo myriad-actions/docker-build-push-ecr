@@ -117,6 +117,7 @@ runs:
         echo '```' >> $GITHUB_STEP_SUMMARY
         cat scan-image-trivy.txt >> $GITHUB_STEP_SUMMARY
         echo '```' >> $GITHUB_STEP_SUMMARY
+      shell: bash
     
     - name: Tag and push image to ECR
       if: steps.check-ecr-image.outputs.exists == 'false'
