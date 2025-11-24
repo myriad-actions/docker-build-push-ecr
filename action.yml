@@ -103,21 +103,20 @@ runs:
         VERSION: ${{ inputs.app-version }}-${{ inputs.short-sha }}
       with:
         image-ref: "${{ inputs.app }}:${{ env.VERSION }}"
-        scan-type: image
-        format: 'github'
-        output: 'scan-results.sbom.json'
+        format: 'table'
+        output: 'scan-image-trivy.txt'
         exit-code: '0'
         ignore-unfixed: true
         vuln-type: 'os,library'
         severity: 'CRITICAL,HIGH'
     
-    - name: Upload trivy report as a Github artifact
-      uses: actions/upload-artifact@v5
-      with:
-        name: trivy-sbom-report
-        path: '${{ github.workspace }}/scan-results.sbom.json'
-        retention-days: 5
-        overwrite: true
+    - name: Display Trivy table in logs & step summary
+      run: |
+        cat scan-image-trivy.txt
+        echo "## Trivy Scan Results" >> $GITHUB_STEP_SUMMARY
+        echo '```' >> $GITHUB_STEP_SUMMARY
+        cat scan-image-trivy.txt >> $GITHUB_STEP_SUMMARY
+        echo '```' >> $GITHUB_STEP_SUMMARY
     
     - name: Tag and push image to ECR
       if: steps.check-ecr-image.outputs.exists == 'false'
