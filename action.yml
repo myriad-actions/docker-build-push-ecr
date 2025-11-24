@@ -101,6 +101,7 @@ runs:
       uses: aquasecurity/trivy-action@0.28.0
       env:
         VERSION: ${{ inputs.app-version }}-${{ inputs.short-sha }}
+        TRIVY_DISABLE_VEX_NOTICE: true
       with:
         image-ref: "${{ inputs.app }}:${{ env.VERSION }}"
         format: 'table'
