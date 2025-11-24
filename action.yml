@@ -103,11 +103,21 @@ runs:
         VERSION: ${{ inputs.app-version }}-${{ inputs.short-sha }}
       with:
         image-ref: "${{ inputs.app }}:${{ env.VERSION }}"
-        format: 'table'
+        scan-type: image
+        format: 'github'
+        output: 'scan-results.sbom.json'
         exit-code: '0'
         ignore-unfixed: true
         vuln-type: 'os,library'
         severity: 'CRITICAL,HIGH'
+    
+    - name: Upload trivy report as a Github artifact
+      uses: actions/upload-artifact@v5
+      with:
+        name: trivy-sbom-report
+        path: '${{ github.workspace }}/scan-results.sbom.json'
+        retention-days: 5
+        overwrite: true
     
     - name: Tag and push image to ECR
       if: steps.check-ecr-image.outputs.exists == 'false'
