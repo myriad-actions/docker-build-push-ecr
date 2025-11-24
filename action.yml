@@ -98,6 +98,7 @@ runs:
       shell: bash
     
     - name:  Run Trivy vulnerability scanner on local image
+      if: steps.check-ecr-image.outputs.exists == 'false'
       uses: aquasecurity/trivy-action@0.28.0
       env:
         VERSION: ${{ inputs.app-version }}-${{ inputs.short-sha }}
@@ -112,6 +113,7 @@ runs:
         severity: 'CRITICAL,HIGH'
     
     - name: Display Trivy table in logs & step summary
+      if: steps.check-ecr-image.outputs.exists == 'false'
       run: |
         cat scan-image-trivy.txt
         echo "## Trivy Scan Results" >> $GITHUB_STEP_SUMMARY
