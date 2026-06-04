@@ -104,6 +104,7 @@ runs:
       if: steps.check-ecr-image.outputs.exists == 'false'
       uses: aquasecurity/trivy-action@v0.36.0
       env:
+        REGISTRY: ${{ steps.login-ecr.outputs.registry }}
         VERSION: ${{ inputs.app-version }}-${{ inputs.short-sha }}
         TRIVY_DISABLE_VEX_NOTICE: true
       with:
