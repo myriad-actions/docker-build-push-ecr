@@ -107,7 +107,7 @@ runs:
         VERSION: ${{ inputs.app-version }}-${{ inputs.short-sha }}
         TRIVY_DISABLE_VEX_NOTICE: true
       with:
-        image-ref: "${{ inputs.app }}:${{ env.VERSION }}"
+        image-ref: "${{ env.REGISTRY }}/${{ inputs.app }}:${{ env.VERSION }}"
         format: 'table'
         output: 'scan-image-trivy.txt'
         exit-code: '0'
