@@ -33,6 +33,15 @@ runs:
       uses: actions/checkout@v6.0.2
       with:
         fetch-depth: 0
+    
+    - name: install awscli
+      run: |
+        curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "/tmp/awscliv2.zip"
+        unzip /tmp/awscliv2.zip -d /tmp/ >/dev/null 2>&1
+        /tmp/aws/install -i $HOME/aws-cli -b $HOME/.local/bin >/dev/null 2>&1
+        export PATH=$HOME/.local/bin:$PATH
+        aws --version
+      shell: bash
 
     - name: Configure AWS credentials
       uses: aws-actions/configure-aws-credentials@v6.1.1
@@ -43,13 +52,42 @@ runs:
     - name: Login to Amazon ECR
       id: login-ecr
       uses: aws-actions/amazon-ecr-login@v2
+    
+    - name: Check if ECR image exists
+      id: check-ecr-image
+      env:
+        VERSION: ${{ inputs.app-version }}-${{ inputs.short-sha }}
+      run: |
+        set +e
+        echo "Checking tag: $VERSION"
+        IMAGE_EXISTS=$(aws ecr describe-images \
+          --repository-name ${{ inputs.app }} \
+          --image-ids imageTag=$VERSION \
+          --region ${{ inputs.aws-region }} \
+          --query 'imageDetails[0].imageTags[0]' \
+          --output text 2>/dev/null)
+        if [ -z "$IMAGE_EXISTS" ] || [ "$IMAGE_EXISTS" = "None" ] || [ "$IMAGE_EXISTS" = "null" ]; then
+          echo "Image does NOT exist."
+          echo "exists=false" >> $GITHUB_OUTPUT
+        else
+          echo "Image EXISTS: $IMAGE_EXISTS"
+          echo "exists=true" >> $GITHUB_OUTPUT
+        fi
+      shell: bash
+    
+    - name: Output result
+      run: |
+        echo "Image exists? ${{ steps.check-ecr-image.outputs.exists }}"
+      shell: bash
 
     - name: Set up Docker Buildx
       uses: docker/setup-buildx-action@v4.0.0
+      if: steps.check-ecr-image.outputs.exists == 'false'
       with:
         version: "v0.30.1"
 
     - name: Build, tag, and push image to ECR
+      if: steps.check-ecr-image.outputs.exists == 'false'
       env:
         REGISTRY: ${{ steps.login-ecr.outputs.registry }}
         VERSION: ${{ inputs.app-version }}-${{ inputs.short-sha }}
@@ -60,4 +98,29 @@ runs:
           --push \
           -t $REGISTRY/${{ inputs.app }}:${VERSION} \
           -f ${{ inputs.dockerfile-path }} .
+      shell: bash
+
+    - name:  Run Trivy vulnerability scanner on local image
+      if: steps.check-ecr-image.outputs.exists == 'false'
+      uses: aquasecurity/trivy-action@v0.36.0
+      env:
+        VERSION: ${{ inputs.app-version }}-${{ inputs.short-sha }}
+        TRIVY_DISABLE_VEX_NOTICE: true
+      with:
+        image-ref: "${{ inputs.app }}:${{ env.VERSION }}"
+        format: 'table'
+        output: 'scan-image-trivy.txt'
+        exit-code: '0'
+        ignore-unfixed: true
+        vuln-type: 'os,library'
+        severity: 'CRITICAL,HIGH'
+    
+    - name: Display Trivy table in logs & step summary
+      if: steps.check-ecr-image.outputs.exists == 'false'
+      run: |
+        cat scan-image-trivy.txt
+        echo "## Trivy Scan Results" >> $GITHUB_STEP_SUMMARY
+        echo '```' >> $GITHUB_STEP_SUMMARY
+        cat scan-image-trivy.txt >> $GITHUB_STEP_SUMMARY
+        echo '```' >> $GITHUB_STEP_SUMMARY
       shell: bash
