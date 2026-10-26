@@ -2,6 +2,10 @@ name: 'Build and Push Docker Image to ECR'
 description: 'Builds a Docker image and pushes it to Amazon ECR.'
 
 inputs:
+  platforms:
+    description: "Target platforms, comma-separated (e.g. linux/amd64,linux/arm64)"
+    required: false
+    default: "linux/amd64"
   iam-role-aws:
     description: 'The IAM role to assume for AWS credentials.'
     required: true
@@ -30,7 +34,7 @@ runs:
   using: 'composite'
   steps:
     - name: Checkout code
-      uses: actions/checkout@v6.0.2
+      uses: actions/checkout@v7
       with:
         fetch-depth: 0
     
@@ -44,7 +48,7 @@ runs:
       shell: bash
 
     - name: Configure AWS credentials
-      uses: aws-actions/configure-aws-credentials@v6.1.1
+      uses: aws-actions/configure-aws-credentials@v6.3.0
       with:
         role-to-assume: ${{ inputs.iam-role-aws }}
         aws-region: ${{ inputs.aws-region }}
@@ -79,12 +83,16 @@ runs:
       run: |
         echo "Image exists? ${{ steps.check-ecr-image.outputs.exists }}"
       shell: bash
+    
+    - name: Set up QEMU
+      if: steps.check-ecr-image.outputs.exists == 'false' && contains(inputs.platforms, 'linux/arm64')
+      uses: docker/setup-qemu-action@v4.4.0
 
     - name: Set up Docker Buildx
-      uses: docker/setup-buildx-action@v4.0.0
+      uses: docker/setup-buildx-action@v4.4.1
       if: steps.check-ecr-image.outputs.exists == 'false'
       with:
-        version: "v0.30.1"
+        version: "v0.38.1"
 
     - name: Build, tag, and push image to ECR
       if: steps.check-ecr-image.outputs.exists == 'false'
@@ -94,7 +102,7 @@ runs:
       run: |
         docker buildx build \
           --build-arg GIT_COMMIT_SHA=${{ inputs.short-sha }} \
-          --platform linux/amd64 \
+          --platform ${{ inputs.platforms }} \
           --push \
           -t $REGISTRY/${{ inputs.app }}:${VERSION} \
           -f ${{ inputs.dockerfile-path }} .
@@ -107,6 +115,7 @@ runs:
         REGISTRY: ${{ steps.login-ecr.outputs.registry }}
         VERSION: ${{ inputs.app-version }}-${{ inputs.short-sha }}
         TRIVY_DISABLE_VEX_NOTICE: true
+        TRIVY_PLATFORM: linux/amd64
       with:
         image-ref: "${{ env.REGISTRY }}/${{ inputs.app }}:${{ env.VERSION }}"
         format: 'table'
